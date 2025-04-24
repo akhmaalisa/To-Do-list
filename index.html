@@ -6,54 +6,73 @@
   <title>To-Do List</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f3f4f6;
+      font-family: 'Segoe UI', sans-serif;
+      background: #fff8f1;
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 2rem;
     }
     h1 {
-      color: #111827;
+      color: #7c3aed;
     }
-    #todo-form input {
+    #todo-form input,
+    #todo-form input[type="date"] {
       padding: 0.5rem;
-      width: 250px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      width: 200px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      margin-right: 0.5rem;
     }
     #todo-form button {
       padding: 0.5rem 1rem;
-      margin-left: 8px;
       border: none;
-      background: #2563eb;
+      background: #f59e0b;
       color: white;
-      border-radius: 4px;
+      border-radius: 6px;
       cursor: pointer;
     }
     ul {
       list-style: none;
       padding: 0;
       margin-top: 1rem;
+      width: 100%;
+      max-width: 500px;
     }
     li {
-      background: white;
+      background: #fff7ed;
       margin: 0.5rem 0;
       padding: 0.75rem;
       display: flex;
-      justify-content: space-between;
-      border-radius: 4px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      flex-direction: column;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
-    li.completed span {
+    li.completed span.task-text {
       text-decoration: line-through;
-      color: #6b7280;
+      color: #9ca3af;
+    }
+    .task-main {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     .actions button {
-      margin-left: 8px;
+      margin-left: 6px;
       background: none;
       border: none;
       cursor: pointer;
+      font-size: 1rem;
+    }
+    .due-date {
+      font-size: 0.85rem;
+      color: #92400e;
+      margin-top: 0.3rem;
+    }
+    input.edit-input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.5rem;
     }
   </style>
 </head>
@@ -61,6 +80,7 @@
   <h1>My To-Do List</h1>
   <form id="todo-form">
     <input type="text" id="todo-input" placeholder="Enter a task..." required />
+    <input type="date" id="todo-date" />
     <button type="submit">Add</button>
   </form>
   <ul id="todo-list"></ul>
@@ -68,6 +88,7 @@
   <script>
     const form = document.getElementById('todo-form');
     const input = document.getElementById('todo-input');
+    const dateInput = document.getElementById('todo-date');
     const list = document.getElementById('todo-list');
 
     let todos = JSON.parse(localStorage.getItem('todos')) || [];
@@ -80,28 +101,45 @@
       list.innerHTML = '';
       todos.forEach((todo, index) => {
         const li = document.createElement('li');
-        li.className = todo.completed ? 'completed' : '';
+        if (todo.completed) li.classList.add('completed');
+
+        const main = document.createElement('div');
+        main.className = 'task-main';
 
         const span = document.createElement('span');
+        span.className = 'task-text';
         span.textContent = todo.text;
         span.onclick = () => toggleComplete(index);
 
         const actions = document.createElement('div');
         actions.className = 'actions';
 
+        const editBtn = document.createElement('button');
+        editBtn.textContent = '✏️';
+        editBtn.onclick = () => editTodo(index);
+
         const delBtn = document.createElement('button');
         delBtn.textContent = '🗑️';
         delBtn.onclick = () => deleteTodo(index);
 
+        actions.appendChild(editBtn);
         actions.appendChild(delBtn);
-        li.appendChild(span);
-        li.appendChild(actions);
+
+        main.appendChild(span);
+        main.appendChild(actions);
+
+        const date = document.createElement('div');
+        date.className = 'due-date';
+        if (todo.dueDate) date.textContent = 'Due: ' + todo.dueDate;
+
+        li.appendChild(main);
+        li.appendChild(date);
         list.appendChild(li);
       });
     }
 
-    function addTodo(text) {
-      todos.push({ text, completed: false });
+    function addTodo(text, dueDate) {
+      todos.push({ text, completed: false, dueDate });
       saveTodos();
       renderTodos();
     }
@@ -118,11 +156,21 @@
       renderTodos();
     }
 
+    function editTodo(index) {
+      const newText = prompt('Edit your task:', todos[index].text);
+      if (newText !== null && newText.trim() !== '') {
+        todos[index].text = newText.trim();
+        saveTodos();
+        renderTodos();
+      }
+    }
+
     form.addEventListener('submit', e => {
       e.preventDefault();
       if (input.value.trim() !== '') {
-        addTodo(input.value.trim());
+        addTodo(input.value.trim(), dateInput.value);
         input.value = '';
+        dateInput.value = '';
       }
     });
 
